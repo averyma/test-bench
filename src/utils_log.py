@@ -29,15 +29,18 @@ class metaLogger(object):
             log_dict = defaultdict(lambda: list())
         return log_dict
 
-    def log_value(self, name, val, step):
+    def add_scalar(self, name, val, step):
         self.writer.add_scalar(name, val, step)
         self.log_dict[name] += [(time.time(), int(step), float(val))]
 
-    def add_scalar(self, name, val, step):
-        self.log_value(name, val, step)
+    def add_scalars(self, name, val_dict, step):
+        self.writer.add_scalars(name, val_dict, step)
+        for key, val in val_dict.items():
+            self.log_dict[name+key] += [(time.time(), int(step), float(val))]
 
-    def log_fig(self, name, val, step):
+    def add_figure(self, name, val, step):
         self.writer.add_figure(name, val, step)
+        val.savefig(self.log_path + "/" + name + ".png")
 
     def save_log(self, filename="log.pth.tar"):
         try:

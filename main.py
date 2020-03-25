@@ -5,65 +5,37 @@ import logging
 import torch
 import numpy as np
 
+from models import c11
 from src.attacks import pgd_rand
-from src.train import train_standard, train_adv, train_soar
+from src.train import train_standard, train_adv
 from src.evaluation import test_clean, test_adv
 from src.args import get_args
 from src.utils_dataset import load_dataset
 from src.utils_log import metaLogger, saveCheckpoint
 from src.utils_general import seed_everything, get_model, get_optim
-from src.utils_plot import plot_standard_adv, plot_soar
+from src.utils_plot import plot_standard_adv
 
 def train(args, epoch, logger, loader, model, opt, device):
     """perform one epoch of training."""
     if args.method == "standard":
         train_log = train_standard(logger, epoch, loader, model, opt, device)
-        logger.add_scalar("train_acc_ep", train_log[0], epoch+1)
-        logger.add_scalar("train_loss_ep", train_log[1], epoch+1)
-        logging.info(
-            "Epoch: [{0}]\t"
-            "Loss: {loss:.6f}\t"
-            "Accuracy: {acc:.2f}".format(
-                epoch,
-                loss=train_log[1],
-                acc=train_log[0]))
 
     elif args.method == "adv":
         train_log = train_adv(logger, epoch, loader, args.pgd_steps, model, opt, device)
-        logger.add_scalar("train_acc_ep", train_log[0], epoch+1)
-        logger.add_scalar("train_loss_ep", train_log[1], epoch+1)
-        logging.info(
-            "Epoch: [{0}]\t"
-            "Loss: {loss:.6f}\t"
-            "Accuracy: {acc:.2f}".format(
-                epoch,
-                loss=train_log[1],
-                acc=train_log[0]))
 
-    elif args.method == "soar":
-        soar_param = {
-            "init": args.init,
-            "grad_clip": args.grad_clip,
-            "norm_clip": args.norm_clip,
-            "eps": args.epsilon,
-            "lambbda": args.lambbda,
-            "step_size": args.step_size}
-
-        train_log = train_soar(logger, epoch, loader, model, soar_param, opt, device)
-        logger.add_scalar("train_acc_ep", train_log[0], epoch+1)
-        logger.add_scalar("train_loss_ep", train_log[1], epoch+1)
-        logger.add_scalar("train_reg_ep", train_log[2], epoch+1)
-        logging.info(
-            "Epoch: [{0}]\t"
-            "Loss: {loss:.6f}\t"
-            "Regularizer: {reg: 6f}\t"
-            "Accuracy: {acc:.2f}".format(
-                epoch,
-                loss=train_log[1],
-                acc=train_log[0],
-                reg=train_log[2]))
     else:
         raise  NotImplementedError("Training method not implemented!")
+
+    logger.add_scalar("train_acc_ep", train_log[0], epoch+1)
+    logger.add_scalar("train_loss_ep", train_log[1], epoch+1)
+    logging.info(
+        "Epoch: [{0}]\t"
+        "Loss: {loss:.6f}\t"
+        "Accuracy: {acc:.2f}".format(
+            epoch,
+            loss=train_log[1],
+            acc=train_log[0]))
+
     return train_log
 
 def main():
@@ -103,10 +75,10 @@ def main():
         test_log = test_clean(test_loader, model, device)
         adv_log = test_adv(test_loader, model, pgd_rand, attack_param, device)
 
+        logger.add_scalars("pgd20_acc", adv_log[0], _epoch+1)
+        logger.add_scalars("pgd20_loss", adv_log[1], _epoch+1)
         logger.add_scalar("test_acc", test_log[0], _epoch+1)
         logger.add_scalar("test_loss", test_log[1], _epoch+1)
-        logger.add_scalar("pgd20_acc", adv_log[0], _epoch+1)
-        logger.add_scalar("pgd20_loss", adv_log[1], _epoch+1)
         logging.info(
             "Test set: Loss: {loss:.6f}\t"
             "Accuracy: {acc:.2f}".format(
@@ -123,14 +95,11 @@ def main():
 
         if (_epoch+1) % args.ckpt_freq == 0:
             saveCheckpoint(args.ckpt_dir, "custome_ckpt.pth", model, opt, _epoch, lr_scheduler)
-        if args.method == "soar":
-            fig = plot_soar(logger.log_dict)
-        else:
             fig = plot_standard_adv(logger.log_dict)
 
-        logger.log_fig("fig", fig, _epoch+1)
-        fig.savefig("./exp/"+ str(args.job_id) +"/main.png")
+            logger.add_figure("main", fig, _epoch+1)
         logger.save_log()
+    logger.close()
 
 if __name__ == "__main__":
     main()
