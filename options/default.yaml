@@ -1,0 +1,32 @@
+# method / detaset / arch / pretrained
+method: "standard"
+dataset: "cifar10"
+arch: "c11"
+log_dir: "./exp/"
+pretrain: "./pretrained/standard/seed0/model.pt"
+
+# optimization settings
+optim: "sgd"
+lr: 0.01
+lr_update: [100, 150] 
+momentum: 0.9
+weight_decay: 0.0002
+batch_size: 128
+seed: 0
+epoch: 200 
+
+# checkpoint
+job_id: "0"
+ckpt_dir: "dir_name"
+ckpt_freq: 1
+
+# adversarial training
+pgd_steps: 7
+
+# soar training
+init: "pgd1"
+step_size: 0.03
+epsilon: 0.03
+lambbda: 0.5
+grad_clip: 30
+norm_clip: [0, 10] 
