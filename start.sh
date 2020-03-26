@@ -14,6 +14,5 @@ echo $JOB_ID
 touch $CKPT_DIR/DELAYPURGE
 
 #python main.py --method "standard" --job_id $JOB_ID --ckpt_dir $CKPT_DIR --pretrain ""
-python main.py --method "adv" --job_id $JOB_ID --ckpt_dir $CKPT_DIR --pretrain ""
-#python main.py --method "soar" --job_id $JOB_ID --ckpt_dir $CKPT_DIR --lr_update 90 100 --epoch 150 --lr 0.002
-#python main.py --method "exp" --job_id $JOB_ID --ckpt_dir $CKPT_DIR 
+python main.py --method "adv" --job_id $JOB_ID --ckpt_dir $CKPT_DIR --pretrain "" --arch "resnet8" --lr 0.1
+#python main.py --method "adv" --job_id $JOB_ID --ckpt_dir $CKPT_DIR --pretrain "" --arch "c11" --lr 0.01 

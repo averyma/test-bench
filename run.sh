@@ -1,9 +1,6 @@
-#for i in 0.1 0.01 0.001
+#for j in "c11" "resnet8"
 #do
-	#for j in 0 1 2
-	#do
-		#sbatch start.sh $i $j
-	#done
+	#sbatch start.sh $j
 #done
 
 

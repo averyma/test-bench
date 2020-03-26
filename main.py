@@ -59,7 +59,7 @@ def main():
     opt, lr_scheduler = get_optim(model, args)
     ckpt_epoch = 0
 
-    ckpt_location = os.path.join(args.ckpt_dir, "custome_ckpt.pth")
+    ckpt_location = os.path.join(args.ckpt_dir, "/custome_ckpt.pth")
     if os.path.exists(ckpt_location):
         ckpt = torch.load(ckpt_location)
         model.load_state_dict(ckpt["state_dict"])

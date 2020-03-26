@@ -3,7 +3,7 @@ method: "standard"
 dataset: "cifar10"
 arch: "c11"
 log_dir: "./exp/"
-pretrain: "./pretrained/standard/seed0/model.pt"
+pretrain: ""
 
 # optimization settings
 optim: "sgd"
@@ -22,11 +22,3 @@ ckpt_freq: 1
 
 # adversarial training
 pgd_steps: 7
-
-# soar training
-init: "pgd1"
-step_size: 0.03
-epsilon: 0.03
-lambbda: 0.5
-grad_clip: 30
-norm_clip: [0, 10] 
