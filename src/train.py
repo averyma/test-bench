@@ -50,8 +50,8 @@ def train_standard(logger, epoch, loader, model, opt, device):
                           acc='{0:.2f}%'.format(batch_acc*100))
             t.update()
             curr_itr += 1
-            logger.add_scalar("train_acc_itr", batch_acc, curr_itr)
-            logger.add_scalar("train_loss_itr", loss, curr_itr)
+            logger.add_scalar("train/acc_itr", batch_acc, curr_itr)
+            logger.add_scalar("train/loss_itr", loss, curr_itr)
 
     acc = total_correct / len(loader.dataset) * 100
     total_loss = total_loss / len(loader.dataset)
@@ -95,11 +95,10 @@ def train_adv(logger, epoch, loader, pgd_steps, model, opt, device):
                           acc_adv = '{0:.2f}%'.format(batch_acc_adv*100))
             t.update()
             curr_itr += 1
-            logger.add_scalar("train_acc_itr", batch_acc_adv, curr_itr)
-            logger.add_scalar("train_loss_itr", loss_adv, curr_itr)
+            logger.add_scalar("train/acc_itr", batch_acc_adv, curr_itr)
+            logger.add_scalar("train/loss_itr", loss_adv, curr_itr)
 
     acc_adv = total_correct_adv / len(loader.dataset) * 100
     total_loss_adv = total_loss_adv / len(loader.dataset)
 
     return acc_adv, total_loss_adv
-

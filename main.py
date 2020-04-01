@@ -26,8 +26,8 @@ def train(args, epoch, logger, loader, model, opt, device):
     else:
         raise  NotImplementedError("Training method not implemented!")
 
-    logger.add_scalar("train_acc_ep", train_log[0], epoch+1)
-    logger.add_scalar("train_loss_ep", train_log[1], epoch+1)
+    logger.add_scalar("train/acc_ep", train_log[0], epoch+1)
+    logger.add_scalar("train/loss_ep", train_log[1], epoch+1)
     logging.info(
         "Epoch: [{0}]\t"
         "Loss: {loss:.6f}\t"
@@ -75,10 +75,10 @@ def main():
         test_log = test_clean(test_loader, model, device)
         adv_log = test_adv(test_loader, model, pgd_rand, attack_param, device)
 
-        logger.add_scalars("pgd20_acc", adv_log[0], _epoch+1)
-        logger.add_scalars("pgd20_loss", adv_log[1], _epoch+1)
-        logger.add_scalar("test_acc", test_log[0], _epoch+1)
-        logger.add_scalar("test_loss", test_log[1], _epoch+1)
+        logger.add_scalars("pgd20/acc", adv_log[0], _epoch+1)
+        logger.add_scalars("pgd20/loss", adv_log[1], _epoch+1)
+        logger.add_scalar("test/acc", test_log[0], _epoch+1)
+        logger.add_scalar("test/loss", test_log[1], _epoch+1)
         logging.info(
             "Test set: Loss: {loss:.6f}\t"
             "Accuracy: {acc:.2f}".format(
@@ -95,9 +95,9 @@ def main():
 
         if (_epoch+1) % args.ckpt_freq == 0:
             saveCheckpoint(args.ckpt_dir, "custome_ckpt.pth", model, opt, _epoch, lr_scheduler)
-            fig = plot_standard_adv(logger.log_dict)
+            # fig = plot_standard_adv(logger.log_dict)
 
-            logger.add_figure("main", fig, _epoch+1)
+            # logger.add_figure("main", fig, _epoch+1)
         logger.save_log()
     logger.close()
 

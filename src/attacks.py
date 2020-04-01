@@ -36,6 +36,7 @@ class pgd_rand(object):
                 delta.data = delta.data * 2. * epsilon - epsilon
                 delta.data = (x.data + delta.data).clamp(min = 0, max = 1.0) - x.data
                 for t in range(num_iter):
+                    model.zero_grad()
                     loss = loss_fn(model(x + delta), y)
                     loss.backward()
                     # first we need to make sure delta is within the specified lp ball
@@ -51,6 +52,7 @@ class pgd_rand(object):
                 delta.data = epsilon * delta.data/delta_norm
                 delta.data = (x.data + delta.data).clamp(min = 0., max = 1.) - x.data
                 for t in range(num_iter):
+                    model.zero_grad()
                     loss = loss_fn(model(x + delta), y)
                     loss.backward()
 
