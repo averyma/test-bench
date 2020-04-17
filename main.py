@@ -45,10 +45,9 @@ def main():
     attack_param = {"ord":np.inf, "epsilon": 8./255., "alpha":2./255., "num_iter": 20, "restart": 1}
 
     args = get_args()
-    log_path = args.log_dir + "/" + str(args.job_id)
-    logger = metaLogger(log_path)
+    logger = metaLogger(args.j_dir)
     logging.basicConfig(
-        filename=log_path + "/log.txt",
+        filename=args.j_dir+ "/log/log.txt",
         format='%(asctime)s %(message)s', level=logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
@@ -58,8 +57,9 @@ def main():
     model = get_model(args, device)
     opt, lr_scheduler = get_optim(model, args)
     ckpt_epoch = 0
-
-    ckpt_location = os.path.join(args.ckpt_dir, "/custome_ckpt.pth")
+    
+    ckpt_dir = args.j_dir+"/"+str(args.j_id)+"/"
+    ckpt_location = os.path.join(ckpt_dir, "custome_ckpt.pth")
     if os.path.exists(ckpt_location):
         ckpt = torch.load(ckpt_location)
         model.load_state_dict(ckpt["state_dict"])
@@ -75,8 +75,8 @@ def main():
         test_log = test_clean(test_loader, model, device)
         adv_log = test_adv(test_loader, model, pgd_rand, attack_param, device)
 
-        logger.add_scalars("pgd20/acc", adv_log[0], _epoch+1)
-        logger.add_scalars("pgd20/loss", adv_log[1], _epoch+1)
+        logger.add_scalar("pgd20/acc", adv_log[0], _epoch+1)
+        logger.add_scalar("pgd20/loss", adv_log[1], _epoch+1)
         logger.add_scalar("test/acc", test_log[0], _epoch+1)
         logger.add_scalar("test/loss", test_log[1], _epoch+1)
         logging.info(
@@ -94,12 +94,13 @@ def main():
             lr_scheduler.step()
 
         if (_epoch+1) % args.ckpt_freq == 0:
-            saveCheckpoint(args.ckpt_dir, "custome_ckpt.pth", model, opt, _epoch, lr_scheduler)
+            saveCheckpoint(ckpt_dir, "custome_ckpt.pth", model, opt, _epoch, lr_scheduler)
             # fig = plot_standard_adv(logger.log_dict)
 
             # logger.add_figure("main", fig, _epoch+1)
         logger.save_log()
     logger.close()
+    torch.save(model.state_dict(), args.j_dir+"/model/model.pt")
 
 if __name__ == "__main__":
     main()

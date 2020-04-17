@@ -18,9 +18,10 @@ def saveCheckpoint(ckpt_dir, ckpt_name, model, opt, epoch, lr_scheduler):
 
 class metaLogger(object):
     def __init__(self, log_path, flush_sec=5):
-        self.log_path = log_path
+        self.log_path = log_path+"/log/"
+        self.tb_path = log_path+"/tb/"
         self.log_dict = self.load_log(self.log_path)
-        self.writer = SummaryWriter(log_dir=self.log_path, flush_secs=flush_sec)
+        self.writer = SummaryWriter(log_dir=self.tb_path, flush_secs=flush_sec)
 
     def load_log(self, log_path):
         try:

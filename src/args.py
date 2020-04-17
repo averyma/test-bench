@@ -12,8 +12,6 @@ def parse_args():
                         default=argparse.SUPPRESS)
     parser.add_argument("--arch",
                         default=argparse.SUPPRESS)
-    parser.add_argument("--log_dir",
-    			default=argparse.SUPPRESS)
     parser.add_argument("--pretrain",
     			default=argparse.SUPPRESS)
     
@@ -36,10 +34,10 @@ def parse_args():
     			default=argparse.SUPPRESS, type=int)
 
     # hyper-param for job_id, and ckpt
-    parser.add_argument("--job_id",
-    			default=argparse.SUPPRESS, type=int)
-    parser.add_argument("--ckpt_dir",
+    parser.add_argument("--j_dir",
     			default=argparse.SUPPRESS)
+    parser.add_argument("--j_id",
+    			default=argparse.SUPPRESS, type=int)
     parser.add_argument("--ckpt_freq",
     			default=argparse.SUPPRESS, type=int)
     
@@ -47,35 +45,21 @@ def parse_args():
     parser.add_argument("--pgd_steps",
     			default=argparse.SUPPRESS, type=int)
 
-    # hyper-param for SOAR
-    parser.add_argument("--init",
-    			default=argparse.SUPPRESS)
-    parser.add_argument("--step_size",
-    			default=argparse.SUPPRESS, type=float)
-    parser.add_argument("--epsilon",
-    			default=argparse.SUPPRESS, type=float)
-    parser.add_argument("--lambbda",
-    			default=argparse.SUPPRESS, type=float)
-    parser.add_argument("--grad_clip",
-    			default=argparse.SUPPRESS, type=float)
-    parser.add_argument("--norm_clip",
-    			default=argparse.SUPPRESS, nargs="+", type=float)
-
     args = parser.parse_args()
 
     return args
 
 def make_dir(args):
-    _dir = str(args["log_dir"]) + str(args["job_id"])
+    _dir = str(args["j_dir"]+"/config/")
     try:
         os.makedirs(_dir)
     except os.error:
         pass
 
-    if not os.path.exists(_dir + "/hyper_params.yaml"):
-        f = open(_dir + "/hyper_params.yaml" ,"w+")
+    if not os.path.exists(_dir + "/config.yaml"):
+        f = open(_dir + "/config.yaml" ,"w+")
         f.close()
-    with open(_dir + "/hyper_params.yaml", "a") as f:
+    with open(_dir + "/config.yaml", "a") as f:
         # f.write(str(args).replace(", ", "\n") + "\n\n")
         f.write(yaml.dump(args))
 
