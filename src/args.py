@@ -34,7 +34,7 @@ def parse_args():
     			default=argparse.SUPPRESS, type=int)
 
     # hyper-param for job_id, and ckpt
-    parser.add_argument("--j_dir",
+    parser.add_argument("--j_dir", required=True,
     			default=argparse.SUPPRESS)
     parser.add_argument("--j_id",
     			default=argparse.SUPPRESS, type=int)

@@ -7,13 +7,17 @@ from torch.utils.tensorboard import SummaryWriter
 
 def saveCheckpoint(ckpt_dir, ckpt_name, model, opt, epoch, lr_scheduler):
 
-    checkpoint_save({"state_dict": model.state_dict(),
-                     "optimizer": opt.state_dict(),
-                     "epoch": epoch+1}, ckpt_dir, ckpt_name)
-
     if lr_scheduler:
-        checkpoint_save({"lr_scheduler": lr_scheduler.state_dict()},
+        checkpoint_save({"state_dict": model.state_dict(),
+                         "optimizer": opt.state_dict(),
+                         "epoch": epoch+1,
+                         "lr_scheduler":lr_scheduler.state_dict()},
                         ckpt_dir, ckpt_name)
+    else:
+        checkpoint_save({"state_dict": model.state_dict(),
+                         "optimizer": opt.state_dict(),
+                         "epoch": epoch+1}, ckpt_dir, ckpt_name)
+
     print("SAVED CHECKPOINT")
 
 class metaLogger(object):

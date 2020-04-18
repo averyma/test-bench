@@ -16,8 +16,6 @@ seed: 0
 epoch: 200 
 
 # checkpoint
-job_id: "0"
-ckpt_dir: "dir_name"
 ckpt_freq: 1
 
 # adversarial training
