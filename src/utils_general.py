@@ -55,9 +55,12 @@ def get_optim(model, argu):
         opt = optim.Adam(model.parameters(), lr = argu.lr)
    
     # check if milestone is an empty array
-    if argu.lr_update:
-        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(opt, milestones = argu.lr_update)
-    else:
+    if argu.lr_update == "icml":
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(opt, milestones=[90,100], gamma=0.1)
+    elif argu.lr_update == "multistep":
+        _milestones = [argu.epoch/ 2, argu.epoch * 3 / 4]
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(opt, milestones=_milestones, gamma=0.1)
+    elif argu.lr_update == "fixed":
         lr_scheduler = False
 
     return opt, lr_scheduler

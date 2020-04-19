@@ -2,13 +2,12 @@
 method: "standard"
 dataset: "cifar10"
 arch: "c11"
-log_dir: "./exp/"
 pretrain: ""
 
 # optimization settings
 optim: "sgd"
 lr: 0.01
-lr_update: [100, 150] 
+lr_update: "fixed"
 momentum: 0.9
 weight_decay: 0.0002
 batch_size: 128

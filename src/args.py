@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument("--lr",
     			default=argparse.SUPPRESS, type=float)
     parser.add_argument("--lr_update",
-    			default=argparse.SUPPRESS, nargs="+", type=float)
+    			default=argparse.SUPPRESS)
     parser.add_argument("--momentum",
     			default=argparse.SUPPRESS, type=float)
     parser.add_argument("--weight_decay",

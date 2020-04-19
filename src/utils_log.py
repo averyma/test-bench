@@ -29,7 +29,7 @@ class metaLogger(object):
 
     def load_log(self, log_path):
         try:
-            log_dict = torch.load(log_path + "/log.pth.tar")
+            log_dict = torch.load(log_path + "/log.pth")
         except FileNotFoundError:
             log_dict = defaultdict(lambda: list())
         return log_dict
@@ -47,7 +47,7 @@ class metaLogger(object):
         self.writer.add_figure(name, val, step)
         val.savefig(self.log_path + "/" + name + ".png")
 
-    def save_log(self, filename="log.pth.tar"):
+    def save_log(self, filename="log.pth"):
         try:
             os.makedirs(self.log_path)
         except os.error:
