@@ -23,7 +23,7 @@ def rotateCheckpoint(ckpt_dir, ckpt_name, model, opt, epoch, lr_scheduler):
         cmd = "cp -r {} {}".format(ckpt_curr, ckpt_prev)
         os.system(cmd)
         saveCheckpoint(ckpt_dir,
-                       ckpt_name+"_prev.pth",
+                       ckpt_name+"_curr.pth",
                        model,
                        opt,
                        epoch,
