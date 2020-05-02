@@ -11,9 +11,8 @@ from src.train import train_standard, train_adv
 from src.evaluation import test_clean, test_adv
 from src.args import get_args
 from src.utils_dataset import load_dataset
-from src.utils_log import metaLogger, saveCheckpoint
+from src.utils_log import metaLogger, rotateCheckpoint
 from src.utils_general import seed_everything, get_model, get_optim
-from src.utils_plot import plot_standard_adv
 
 def train(args, epoch, logger, loader, model, opt, device):
     """perform one epoch of training."""
@@ -59,7 +58,7 @@ def main():
     ckpt_epoch = 0
     
     ckpt_dir = args.j_dir+"/"+str(args.j_id)+"/"
-    ckpt_location = os.path.join(ckpt_dir, "custome_ckpt.pth")
+    ckpt_location = os.path.join(ckpt_dir, "custome_ckpt_"+logger.ckpt_status+".pth")
     if os.path.exists(ckpt_location):
         ckpt = torch.load(ckpt_location)
         model.load_state_dict(ckpt["state_dict"])
@@ -94,10 +93,8 @@ def main():
             lr_scheduler.step()
 
         if (_epoch+1) % args.ckpt_freq == 0:
-            saveCheckpoint(ckpt_dir, "custome_ckpt.pth", model, opt, _epoch, lr_scheduler)
-            # fig = plot_standard_adv(logger.log_dict)
+            rotateCheckpoint(ckpt_dir, "custome_ckpt", model, opt, _epoch, lr_scheduler)
 
-            # logger.add_figure("main", fig, _epoch+1)
         logger.save_log()
     logger.close()
     torch.save(model.state_dict(), args.j_dir+"/model/model.pt")

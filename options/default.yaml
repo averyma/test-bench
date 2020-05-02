@@ -18,4 +18,4 @@ epoch: 200
 ckpt_freq: 1
 
 # adversarial training
-pgd_steps: 7
+pgd_steps: 10
