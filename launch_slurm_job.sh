@@ -33,6 +33,7 @@ bash ${j_dir}/scripts/${j_name}.sh
 echo -n "#!/bin/bash
 ln -s /checkpoint/$USER/\$SLURM_JOB_ID ${j_dir}/\$SLURM_JOB_ID
 touch ${j_dir}/\$SLURM_JOB_ID/DELAYPURGE
+wandb login 9bc64f558f249643c1805ff63ac9c55f0ef649c4
 $cmd --j_dir ${j_dir} --j_id \$SLURM_JOB_ID
 " > $j_dir/scripts/${j_name}.sh
 

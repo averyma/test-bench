@@ -5,13 +5,15 @@ import torch
 from src.save_function import checkpoint_save
 from torch.utils.tensorboard import SummaryWriter
 
+import wandb
+
 def rotateCheckpoint(ckpt_dir, ckpt_name, model, opt, epoch, lr_scheduler):
     ckpt_curr = os.path.join(ckpt_dir, ckpt_name+"_curr.pth")
     ckpt_prev = os.path.join(ckpt_dir, ckpt_name+"_prev.pth")
 
     # no existing ckpt
     if not (os.path.exists(ckpt_curr) or os.path.exists(ckpt_prev)):
-        saveCheckpoint(ckpt_dir, 
+        saveCheckpoint(ckpt_dir,
                        ckpt_name+"_curr.pth",
                        model,
                        opt,
@@ -44,26 +46,60 @@ def saveCheckpoint(ckpt_dir, ckpt_name, model, opt, epoch, lr_scheduler):
     print("SAVED CHECKPOINT")
 
 class metaLogger(object):
-    def __init__(self, log_path, flush_sec=5):
-        self.log_path = log_path+"/log/"
-        self.tb_path = log_path+"/tb/"
-        self.ckpt_status = "curr"
+    def __init__(self, args, flush_sec=5):
+        self.log_path = args.j_dir+"/log/"
+        self.tb_path = args.j_dir+"/tb/"
+        # self.ckpt_status = "curr"
+        self.ckpt_status = self.get_ckpt_status(args.j_dir, args.j_id)
         self.log_dict = self.load_log(self.log_path)
         self.writer = SummaryWriter(log_dir=self.tb_path, flush_secs=flush_sec)
+        self.wandb_log = wandb.init(name=args.j_dir.split("/")[-1],
+                                    project=args.wandb_project,
+                                    dir=args.j_dir,
+                                    id=str(args.j_id),
+                                    resume=True)
+        self.wandb_log.config.update(args)
 
+    def get_ckpt_status(self, j_dir, j_id):
+        
+        status = "curr"
+        ckpt_dir = j_dir+"/"+str(j_id)+"/"
+        ckpt_location_prev = os.path.join(ckpt_dir, "ckpt_prev.pth")
+        ckpt_location_curr = os.path.join(ckpt_dir, "ckpt_curr.pth")
+        if os.path.exists(ckpt_location_curr) and os.path.exists(ckpt_location_prev):
+            try:
+                torch.load(ckpt_location_curr)
+            except TypeError:
+                status = "prev"
+        else:
+            status = "curr"
+        return status
+    
     def load_log(self, log_path):
-        try:
-            log_dict = torch.load(log_path + "/log_curr.pth")
-        except FileNotFoundError:
-            log_dict = defaultdict(lambda: list())
-        except TypeError:
+        if self.ckpt_status == "curr":
+            try:
+                log_dict = torch.load(log_path + "/log_curr.pth")
+            except FileNotFoundError:
+                log_dict = defaultdict(lambda: list())
+            except TypeError:
+                log_dict = torch.load(log_path + "/log_prev.pth")
+                self.ckpt_status = "prev"
+        else:
             log_dict = torch.load(log_path + "/log_prev.pth")
-            self.ckpt_status = "prev"
         return log_dict
 
     def add_scalar(self, name, val, step):
         self.writer.add_scalar(name, val, step)
         self.log_dict[name] += [(time.time(), int(step), float(val))]
+        try:
+            self.log_dict[name] += [(time.time(), int(step), float(val))]
+        except KeyError:
+            self.log_dict[name] = [(time.time(), int(step), float(val))]
+
+        if "_itr" in name:
+            self.wandb_log.log({"iteration": step, name: float(val)})
+        else:
+            self.wandb_log.log({"epoch": step, name: float(val)})
 
     def add_scalars(self, name, val_dict, step):
         self.writer.add_scalars(name, val_dict, step)
