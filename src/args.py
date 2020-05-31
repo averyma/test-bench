@@ -41,6 +41,10 @@ def parse_args():
     parser.add_argument("--ckpt_freq",
     			default=argparse.SUPPRESS, type=int)
     
+    # setup wandb logging
+    parser.add_argument("--wandb_project",
+    			default=argparse.SUPPRESS)
+
     # for adversarial training, we just need to specify pgd steps
     parser.add_argument("--pgd_steps",
     			default=argparse.SUPPRESS, type=int)

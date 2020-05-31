@@ -44,7 +44,7 @@ def main():
     attack_param = {"ord":np.inf, "epsilon": 8./255., "alpha":2./255., "num_iter": 20, "restart": 1}
 
     args = get_args()
-    logger = metaLogger(args.j_dir)
+    logger = metaLogger(args)
     logging.basicConfig(
         filename=args.j_dir+ "/log/log.txt",
         format='%(asctime)s %(message)s', level=logging.INFO)
