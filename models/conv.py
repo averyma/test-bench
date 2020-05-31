@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from src.frn import TLU, FRN
 
 class c1(nn.Module):
     '''c1 implemented in "Hessian-based analysis of Large batch trainig and robustness to adversaries"'''
@@ -427,3 +428,457 @@ class c11(nn.Module):
         x = self.fc2(x)
 
         return zero_act, non_zero_act, total_act
+
+class c12(nn.Module):
+    """
+    The 8-layer conv net model used in: https://github.com/YisenWang/dynamic_adv_training/blob/master/models.py. 
+    BN removed
+    """
+    def __init__(self):
+        super(c12, self).__init__()
+        self.conv1 = nn.Conv2d(3, 64, 3, padding=1)
+        self.conv2 = nn.Conv2d(64, 64, 3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
+        self.conv4 = nn.Conv2d(128, 128, 3, padding=1)
+        self.conv5 = nn.Conv2d(128, 196, 3, padding=1)
+        self.conv6 = nn.Conv2d(196, 196, 3, padding=1)
+        self.fc1 = nn.Linear(196 * 4 * 4, 256)
+        self.fc2 = nn.Linear(256, 10)
+        self.pool = nn.MaxPool2d(2, 2)
+
+    def per_image_standardization(self, x):
+        _dim = x.shape[1] * x.shape[2] * x.shape[3]
+        mean = torch.mean(x, dim=(1,2,3), keepdim = True)
+        stddev = torch.std(x, dim=(1,2,3), keepdim = True)
+        adjusted_stddev = torch.max(stddev, (1./np.sqrt(_dim)) * torch.ones_like(stddev))
+        return (x - mean) / adjusted_stddev
+
+    def forward(self, x):
+        x = self.per_image_standardization(x)
+
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = self.pool(x)
+        
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        x = self.pool(x)
+        
+        x = F.relu(self.conv5(x))
+        x = F.relu(self.conv6(x))
+        x = self.pool(x)
+        
+        x = x.view(-1, 196 * 4 * 4)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+    
+class c13(nn.Module):
+    """
+    4 layer model with batchnorm
+    """
+    def __init__(self):
+        super(c13, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, 3)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(32, 32, 3)
+        self.conv3 = nn.Conv2d(32, 64, 3)
+        self.conv4 = nn.Conv2d(64, 64, 3)
+        self.fc1 = nn.Linear(64 * 5 * 5, 512)
+        self.fc2 = nn.Linear(512, 10)
+        self.bn1 = nn.BatchNorm2d(32)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.bn3 = nn.BatchNorm2d(64)
+        self.bn4 = nn.BatchNorm2d(64)
+        
+    def per_image_standardization(self, x):
+        _dim = x.shape[1] * x.shape[2] * x.shape[3]
+        mean = torch.mean(x, dim=(1,2,3), keepdim = True)
+        stddev = torch.std(x, dim=(1,2,3), keepdim = True)
+        adjusted_stddev = torch.max(stddev, (1./np.sqrt(_dim)) * torch.ones_like(stddev))
+        return (x - mean) / adjusted_stddev
+
+    def forward(self, x):
+        x = self.per_image_standardization(x)
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.pool(F.relu(self.bn2(self.conv2(x))))
+        
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = self.pool(F.relu(self.bn4(self.conv4(x))))
+
+        x = x.view(-1, 64 * 5 * 5)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+class c14(nn.Module):
+    """
+    The 8-layer conv net model used in: https://github.com/YisenWang/dynamic_adv_training/blob/master/models.py. 
+    BN preserved
+    """
+    def __init__(self):
+        super(c14, self).__init__()
+        self.conv1 = nn.Conv2d(3, 64, 3, padding=1)
+        self.conv2 = nn.Conv2d(64, 64, 3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
+        self.conv4 = nn.Conv2d(128, 128, 3, padding=1)
+        self.conv5 = nn.Conv2d(128, 196, 3, padding=1)
+        self.conv6 = nn.Conv2d(196, 196, 3, padding=1)
+        self.fc1 = nn.Linear(196 * 4 * 4, 256)
+        self.fc2 = nn.Linear(256, 10)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.bn3 = nn.BatchNorm2d(128)
+        self.bn4 = nn.BatchNorm2d(128)
+        self.bn5 = nn.BatchNorm2d(196)
+        self.bn6 = nn.BatchNorm2d(196)
+        self.bn7 = nn.BatchNorm1d(256)
+
+    def per_image_standardization(self, x):
+        _dim = x.shape[1] * x.shape[2] * x.shape[3]
+        mean = torch.mean(x, dim=(1,2,3), keepdim = True)
+        stddev = torch.std(x, dim=(1,2,3), keepdim = True)
+        adjusted_stddev = torch.max(stddev, (1./np.sqrt(_dim)) * torch.ones_like(stddev))
+        return (x - mean) / adjusted_stddev
+
+    def forward(self, x):
+        x = self.per_image_standardization(x)
+
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = self.pool(x)
+        
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = F.relu(self.bn4(self.conv4(x)))
+        x = self.pool(x)
+        
+        x = F.relu(self.bn5(self.conv5(x)))
+        x = F.relu(self.bn6(self.conv6(x)))
+        x = self.pool(x)
+        
+        x = x.view(-1, 196 * 4 * 4)
+        x = F.relu(self.bn7(self.fc1(x)))
+        x = self.fc2(x)
+        return x
+    
+class c15(nn.Module):
+    """
+    4layer cnn with groupnorm, group size of 8
+    """
+    def __init__(self):
+        super(c15, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, 3)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(32, 32, 3)
+        self.conv3 = nn.Conv2d(32, 64, 3)
+        self.conv4 = nn.Conv2d(64, 64, 3)
+        self.fc1 = nn.Linear(64 * 5 * 5, 512)
+        self.fc2 = nn.Linear(512, 10)
+        self.bn1 = nn.GroupNorm(8, 32)
+        self.bn2 = nn.GroupNorm(8, 32)
+        self.bn3 = nn.GroupNorm(8, 64)
+        self.bn4 = nn.GroupNorm(8, 64)
+        
+    def per_image_standardization(self, x):
+        _dim = x.shape[1] * x.shape[2] * x.shape[3]
+        mean = torch.mean(x, dim=(1,2,3), keepdim = True)
+        stddev = torch.std(x, dim=(1,2,3), keepdim = True)
+        adjusted_stddev = torch.max(stddev, (1./np.sqrt(_dim)) * torch.ones_like(stddev))
+        return (x - mean) / adjusted_stddev
+
+    def forward(self, x):
+        x = self.per_image_standardization(x)
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.pool(F.relu(self.bn2(self.conv2(x))))
+        
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = self.pool(F.relu(self.bn4(self.conv4(x))))
+
+        x = x.view(-1, 64 * 5 * 5)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+class c16(nn.Module):
+    """
+    The 8-layer conv net model used in: https://github.com/YisenWang/dynamic_adv_training/blob/master/models.py. 
+    instead of batchnorm, we use groupnorm
+    """
+    def __init__(self):
+        super(c16, self).__init__()
+        self.conv1 = nn.Conv2d(3, 64, 3, padding=1)
+        self.conv2 = nn.Conv2d(64, 64, 3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
+        self.conv4 = nn.Conv2d(128, 128, 3, padding=1)
+        self.conv5 = nn.Conv2d(128, 196, 3, padding=1)
+        self.conv6 = nn.Conv2d(196, 196, 3, padding=1)
+        self.fc1 = nn.Linear(196 * 4 * 4, 256)
+        self.fc2 = nn.Linear(256, 10)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.bn1 = nn.GroupNorm(8, 64)
+        self.bn2 = nn.GroupNorm(8, 64)
+        self.bn3 = nn.GroupNorm(8, 128)
+        self.bn4 = nn.GroupNorm(8, 128)
+        self.bn5 = nn.GroupNorm(7, 196)
+        self.bn6 = nn.GroupNorm(7, 196)
+        self.bn7 = nn.GroupNorm(8, 256)
+
+    def per_image_standardization(self, x):
+        _dim = x.shape[1] * x.shape[2] * x.shape[3]
+        mean = torch.mean(x, dim=(1,2,3), keepdim = True)
+        stddev = torch.std(x, dim=(1,2,3), keepdim = True)
+        adjusted_stddev = torch.max(stddev, (1./np.sqrt(_dim)) * torch.ones_like(stddev))
+        return (x - mean) / adjusted_stddev
+
+    def forward(self, x):
+        x = self.per_image_standardization(x)
+
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = self.pool(x)
+        
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = F.relu(self.bn4(self.conv4(x)))
+        x = self.pool(x)
+        
+        x = F.relu(self.bn5(self.conv5(x)))
+        x = F.relu(self.bn6(self.conv6(x)))
+        x = self.pool(x)
+        
+        x = x.view(-1, 196 * 4 * 4)
+        x = F.relu(self.bn7(self.fc1(x)))
+        x = self.fc2(x)
+        return x
+    
+class c17(nn.Module):
+    """
+    4 layer cnn variant, groupnorm with group size of 16
+    """
+    def __init__(self):
+        super(c17, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, 3)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(32, 32, 3)
+        self.conv3 = nn.Conv2d(32, 64, 3)
+        self.conv4 = nn.Conv2d(64, 64, 3)
+        self.fc1 = nn.Linear(64 * 5 * 5, 512)
+        self.fc2 = nn.Linear(512, 10)
+        self.bn1 = nn.GroupNorm(16, 32)
+        self.bn2 = nn.GroupNorm(16, 32)
+        self.bn3 = nn.GroupNorm(16, 64)
+        self.bn4 = nn.GroupNorm(16, 64)
+        
+    def per_image_standardization(self, x):
+        _dim = x.shape[1] * x.shape[2] * x.shape[3]
+        mean = torch.mean(x, dim=(1,2,3), keepdim = True)
+        stddev = torch.std(x, dim=(1,2,3), keepdim = True)
+        adjusted_stddev = torch.max(stddev, (1./np.sqrt(_dim)) * torch.ones_like(stddev))
+        return (x - mean) / adjusted_stddev
+
+    def forward(self, x):
+        x = self.per_image_standardization(x)
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.pool(F.relu(self.bn2(self.conv2(x))))
+        
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = self.pool(F.relu(self.bn4(self.conv4(x))))
+
+        x = x.view(-1, 64 * 5 * 5)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+class c18(nn.Module):
+    """
+    4 layer cnn variant, layernorm
+    """
+    def __init__(self):
+        super(c18, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, 3)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(32, 32, 3)
+        self.conv3 = nn.Conv2d(32, 64, 3)
+        self.conv4 = nn.Conv2d(64, 64, 3)
+        self.fc1 = nn.Linear(64 * 5 * 5, 512)
+        self.fc2 = nn.Linear(512, 10)
+        self.bn1 = nn.LayerNorm([32,30,30])
+        self.bn2 = nn.LayerNorm([32,28,28])
+        self.bn3 = nn.LayerNorm([64,12,12])
+        self.bn4 = nn.LayerNorm([64,10,10])
+
+    def per_image_standardization(self, x):
+        _dim = x.shape[1] * x.shape[2] * x.shape[3]
+        mean = torch.mean(x, dim=(1,2,3), keepdim = True)
+        stddev = torch.std(x, dim=(1,2,3), keepdim = True)
+        adjusted_stddev = torch.max(stddev, (1./np.sqrt(_dim)) * torch.ones_like(stddev))
+        return (x - mean) / adjusted_stddev
+
+    def forward(self, x):
+        x = self.per_image_standardization(x)
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.pool(F.relu(self.bn2(self.conv2(x))))
+        
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = self.pool(F.relu(self.bn4(self.conv4(x))))
+
+        x = x.view(-1, 64 * 5 * 5)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+    
+class c20(nn.Module):
+    """
+    4 layer cnn, no normalization
+    ELU activation
+    """
+    def __init__(self):
+        super(c20, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, 3)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(32, 32, 3)
+        self.conv3 = nn.Conv2d(32, 64, 3)
+        self.conv4 = nn.Conv2d(64, 64, 3)
+        self.fc1 = nn.Linear(64 * 5 * 5, 512)
+        self.fc2 = nn.Linear(512, 10)
+        self.act = nn.ELU()
+
+    def per_image_standardization(self, x):
+        _dim = x.shape[1] * x.shape[2] * x.shape[3]
+        mean = torch.mean(x, dim=(1,2,3), keepdim = True)
+        stddev = torch.std(x, dim=(1,2,3), keepdim = True)
+        adjusted_stddev = torch.max(stddev, (1./np.sqrt(_dim)) * torch.ones_like(stddev))
+        return (x - mean) / adjusted_stddev
+
+    def forward(self, x):
+        x = self.per_image_standardization(x)
+        x = self.act(self.conv1(x))
+        x = self.pool(self.act(self.conv2(x)))
+        
+        x = self.act(self.conv3(x))
+        x = self.pool(self.act(self.conv4(x)))
+
+        x = x.view(-1, 64 * 5 * 5)
+        x = self.act(self.fc1(x))
+        x = self.fc2(x)
+        return x
+    
+class c21(nn.Module):
+    """
+    4 layer cnn variant: with batchnorm
+    ELU activation
+    """
+    def __init__(self):
+        super(c21, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, 3)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(32, 32, 3)
+        self.conv3 = nn.Conv2d(32, 64, 3)
+        self.conv4 = nn.Conv2d(64, 64, 3)
+        self.fc1 = nn.Linear(64 * 5 * 5, 512)
+        self.fc2 = nn.Linear(512, 10)
+        self.bn1 = nn.BatchNorm2d(32)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.bn3 = nn.BatchNorm2d(64)
+        self.bn4 = nn.BatchNorm2d(64)
+        self.act = nn.ELU()
+
+    def per_image_standardization(self, x):
+        _dim = x.shape[1] * x.shape[2] * x.shape[3]
+        mean = torch.mean(x, dim=(1,2,3), keepdim = True)
+        stddev = torch.std(x, dim=(1,2,3), keepdim = True)
+        adjusted_stddev = torch.max(stddev, (1./np.sqrt(_dim)) * torch.ones_like(stddev))
+        return (x - mean) / adjusted_stddev
+
+    def forward(self, x):
+        x = self.per_image_standardization(x)
+        x = self.act(self.bn1(self.conv1(x)))
+        x = self.pool(self.act(self.bn2(self.conv2(x))))
+        
+        x = self.act(self.bn3(self.conv3(x)))
+        x = self.pool(self.act(self.bn4(self.conv4(x))))
+
+        x = x.view(-1, 64 * 5 * 5)
+        x = self.act(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+class c22(nn.Module):
+    """
+    4 layer cnn variant: with groupnorm layer
+    ELU activation
+    """
+    def __init__(self):
+        super(c22, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, 3)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(32, 32, 3)
+        self.conv3 = nn.Conv2d(32, 64, 3)
+        self.conv4 = nn.Conv2d(64, 64, 3)
+        self.fc1 = nn.Linear(64 * 5 * 5, 512)
+        self.fc2 = nn.Linear(512, 10)
+        self.bn1 = nn.GroupNorm(8, 32)
+        self.bn2 = nn.GroupNorm(8, 32)
+        self.bn3 = nn.GroupNorm(8, 64)
+        self.bn4 = nn.GroupNorm(8, 64)
+        self.act = nn.ELU()
+        
+    def per_image_standardization(self, x):
+        _dim = x.shape[1] * x.shape[2] * x.shape[3]
+        mean = torch.mean(x, dim=(1,2,3), keepdim = True)
+        stddev = torch.std(x, dim=(1,2,3), keepdim = True)
+        adjusted_stddev = torch.max(stddev, (1./np.sqrt(_dim)) * torch.ones_like(stddev))
+        return (x - mean) / adjusted_stddev
+
+    def forward(self, x):
+        x = self.per_image_standardization(x)
+        x = self.act(self.bn1(self.conv1(x)))
+        x = self.pool(self.act(self.bn2(self.conv2(x))))
+        
+        x = self.act(self.bn3(self.conv3(x)))
+        x = self.pool(self.act(self.bn4(self.conv4(x))))
+
+        x = x.view(-1, 64 * 5 * 5)
+        x = self.act(self.fc1(x))
+        x = self.fc2(x)
+        return x
+    
+class c23(nn.Module):
+    """
+    4 layer cnn variant: with batchnorm layer
+    but affine is set to False, so no learnable params
+    """
+    def __init__(self):
+        super(c23, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, 3)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(32, 32, 3)
+        self.conv3 = nn.Conv2d(32, 64, 3)
+        self.conv4 = nn.Conv2d(64, 64, 3)
+        self.fc1 = nn.Linear(64 * 5 * 5, 512)
+        self.fc2 = nn.Linear(512, 10)
+        self.bn1 = nn.BatchNorm2d(32, affine = False)
+        self.bn2 = nn.BatchNorm2d(32, affine = False)
+        self.bn3 = nn.BatchNorm2d(64, affine = False)
+        self.bn4 = nn.BatchNorm2d(64, affine = False)
+        
+    def per_image_standardization(self, x):
+        _dim = x.shape[1] * x.shape[2] * x.shape[3]
+        mean = torch.mean(x, dim=(1,2,3), keepdim = True)
+        stddev = torch.std(x, dim=(1,2,3), keepdim = True)
+        adjusted_stddev = torch.max(stddev, (1./np.sqrt(_dim)) * torch.ones_like(stddev))
+        return (x - mean) / adjusted_stddev
+
+    def forward(self, x):
+        x = self.per_image_standardization(x)
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.pool(F.relu(self.bn2(self.conv2(x))))
+        
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = self.pool(F.relu(self.bn4(self.conv4(x))))
+
+        x = x.view(-1, 64 * 5 * 5)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
