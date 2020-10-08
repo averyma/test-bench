@@ -53,12 +53,15 @@ class metaLogger(object):
         self.ckpt_status = self.get_ckpt_status(args.j_dir, args.j_id)
         self.log_dict = self.load_log(self.log_path)
         self.writer = SummaryWriter(log_dir=self.tb_path, flush_secs=flush_sec)
-        self.wandb_log = wandb.init(name=args.j_dir.split("/")[-1],
-                                    project=args.wandb_project,
-                                    dir=args.j_dir,
-                                    id=str(args.j_id),
-                                    resume=True)
-        self.wandb_log.config.update(args)
+        self.enable_wandb = args.enable_wandb
+
+        if self.enable_wandb:
+            self.wandb_log = wandb.init(name=args.j_dir.split("/")[-1],
+                                        project=args.wandb_project,
+                                        dir=args.j_dir,
+                                        id=str(args.j_id),
+                                        resume=True)
+            self.wandb_log.config.update(args)
 
     def get_ckpt_status(self, j_dir, j_id):
         
@@ -96,10 +99,11 @@ class metaLogger(object):
         except KeyError:
             self.log_dict[name] = [(time.time(), int(step), float(val))]
 
-        if "_itr" in name:
-            self.wandb_log.log({"iteration": step, name: float(val)})
-        else:
-            self.wandb_log.log({"epoch": step, name: float(val)})
+        if self.enable_wandb:
+            if "_itr" in name:
+                self.wandb_log.log({"iteration": step, name: float(val)})
+            else:
+                self.wandb_log.log({"epoch": step, name: float(val)})
 
     def add_scalars(self, name, val_dict, step):
         self.writer.add_scalars(name, val_dict, step)

@@ -2,6 +2,7 @@ import yaml
 import argparse
 import os
 from src.utils_general import DictWrapper
+import distutils.util
     
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -44,6 +45,8 @@ def parse_args():
     # setup wandb logging
     parser.add_argument("--wandb_project",
     			default=argparse.SUPPRESS)
+    parser.add_argument('--enable_wandb',
+                        default=argparse.SUPPRESS, type=distutils.util.strtobool)
 
     # for adversarial training, we just need to specify pgd steps
     parser.add_argument("--pgd_steps",
@@ -62,10 +65,8 @@ def make_dir(args):
 
     if not os.path.exists(_dir + "/config.yaml"):
         f = open(_dir + "/config.yaml" ,"w+")
-        f.close()
-    with open(_dir + "/config.yaml", "a") as f:
-        # f.write(str(args).replace(", ", "\n") + "\n\n")
         f.write(yaml.dump(args))
+        f.close()
 
 def get_default(yaml_path):
     default = {}
@@ -76,17 +77,10 @@ def get_default(yaml_path):
 def get_args():
     args = parse_args()
     default = get_default('options/default.yaml')
-    # opt_s = yaml_opt(os.path.join('options/{}/{}'.format(args.dataset,
-                                                         # args.path_opt)))
-    # opt.update(opt_s)
+    
     default.update(vars(args).items())
     make_dir(default)
     args_dict = DictWrapper(default)
 
-    # opt.cuda = not opt.no_cuda and torch.cuda.is_available()
-
-    # if opt.g_batch_size == -1:
-        # opt.g_batch_size = opt.batch_size
-    # opt.adam_betas = make_tuple(opt.adam_betas)
     return args_dict
 

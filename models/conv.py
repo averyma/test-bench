@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from src.frn import TLU, FRN
 
 class c1(nn.Module):
     '''c1 implemented in "Hessian-based analysis of Large batch trainig and robustness to adversaries"'''

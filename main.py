@@ -51,7 +51,7 @@ def main():
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
     seed_everything(args.seed)
-    train_loader, test_loader = load_dataset(args.batch_size)
+    train_loader, test_loader = load_dataset(args.dataset, args.batch_size)
 
     model = get_model(args, device)
     opt, lr_scheduler = get_optim(model, args)

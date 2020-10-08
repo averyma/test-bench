@@ -2,6 +2,7 @@
 method: "standard"
 dataset: "cifar10"
 arch: "c11"
+log_dir: "./exp/"
 pretrain: ""
 
 # optimization settings
@@ -19,3 +20,6 @@ ckpt_freq: 1
 
 # adversarial training
 pgd_steps: 10
+
+# wandb flag
+enable_wandb: false

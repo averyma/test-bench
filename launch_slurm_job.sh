@@ -23,7 +23,7 @@ echo "#!/bin/bash
 #SBATCH --partition=${partition}
 #SBATCH --cpus-per-task=$[4 * $resource]
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem=$[22*$resource]G
+#SBATCH --mem=$[16*$resource]GB
 #SBATCH --gres=gpu:${resource}
 #SBATCH --nodes=1
 bash ${j_dir}/scripts/${j_name}.sh

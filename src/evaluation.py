@@ -19,24 +19,6 @@ def test_clean(loader, model, device):
     test_loss = total_loss / len(loader.dataset)
     return test_acc, test_loss
 
-def test_gaussian(loader, model, sigma, device):
-    total_loss, total_correct = 0.,0.
-    for X,y in loader:
-        model.eval()
-        X,y = X.to(device), y.to(device)
-        with ctx_noparamgrad_and_eval(model):
-            delta = torch.empty_like(X.detach()).normal_(mean=0, std=sigma)
-        with torch.no_grad():
-            yp = model(X+delta)
-            loss = nn.CrossEntropyLoss()(yp,y)
-        
-        total_correct += (yp.argmax(dim = 1) == y).sum().item()
-        total_loss += loss.item() * X.shape[0]
-        
-    test_acc = total_correct / len(loader.dataset) * 100
-    test_loss = total_loss / len(loader.dataset)
-    return test_acc, test_loss
-
 def test_adv(loader, model, attack, param, device):
     total_loss, total_correct = 0.,0.
     for X,y in loader:
